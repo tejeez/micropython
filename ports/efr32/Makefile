@@ -21,7 +21,7 @@ INC += -I$(BUILD)
 
 CFLAGS_CORTEX_M4 += -mthumb -mtune=cortex-m4 -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=softfp
 CFLAGS_CORTEX_M4 += -fsingle-precision-constant
-#CFLAGS_CORTEX_M4 += -DMICROPY_FLOAT_IMPL=MICROPY_FLOAT_IMPL_FLOAT
+CFLAGS_CORTEX_M4 += -DMICROPY_FLOAT_IMPL=MICROPY_FLOAT_IMPL_FLOAT
 
 CFLAGS += -Wall -Werror -Wdouble-promotion -Wfloat-conversion
 CFLAGS += -std=gnu99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT)
@@ -32,11 +32,9 @@ CSUPEROPT = -Os # save some code space
 
 # Tune for Debugging or Optimization
 ifeq ($(DEBUG), 1)
-CFLAGS += -Og
-CFLAGS += -ggdb  # Add debug information anyway
+CFLAGS += -O0 -ggdb
 else
-#CFLAGS += -Os -DNDEBUG
-CFLAGS += -Og -DNDEBUG
+CFLAGS += -Os -DNDEBUG
 CFLAGS += -fdata-sections -ffunction-sections
 CFLAGS += -ggdb  # Add debug information anyway
 endif
@@ -83,7 +81,7 @@ LIBM_SRC_C = $(addprefix lib/libm/,\
 	wf_tgamma.c \
 	thumb_vfp_sqrtf.c \
 	)
-#LIBS += "$(shell $(CC) $(CFLAGS) -print-libgcc-file-name)"
+LIBS += "$(shell $(CC) $(CFLAGS) -print-libgcc-file-name)"
 LIBM_O = $(addprefix $(BUILD)/, $(LIBM_SRC_C:.c=.o))
 
 
@@ -110,7 +108,7 @@ CFLAGS += -D__STARTUP_CLEAR_BSS=1
 
 CFLAGS += $(INC)
 OBJ = $(PY_CORE_O) $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
-#OBJ += $(LIBM_O)
+OBJ += $(LIBM_O)
 
 all: $(BUILD)/firmware.bin
 
