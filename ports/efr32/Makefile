@@ -21,7 +21,7 @@ INC += -I$(BUILD)
 
 CFLAGS_CORTEX_M4 += -mthumb -mtune=cortex-m4 -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=softfp
 CFLAGS_CORTEX_M4 += -fsingle-precision-constant
-CFLAGS_CORTEX_M4 += -DMICROPY_FLOAT_IMPL=MICROPY_FLOAT_IMPL_FLOAT
+#CFLAGS_CORTEX_M4 += -DMICROPY_FLOAT_IMPL=MICROPY_FLOAT_IMPL_FLOAT
 
 CFLAGS += -Wall -Werror -Wdouble-promotion -Wfloat-conversion
 CFLAGS += -std=gnu99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT)
@@ -32,9 +32,11 @@ CSUPEROPT = -Os # save some code space
 
 # Tune for Debugging or Optimization
 ifeq ($(DEBUG), 1)
-CFLAGS += -O0 -ggdb
+CFLAGS += -Og
+CFLAGS += -ggdb  # Add debug information anyway
 else
-CFLAGS += -Os -DNDEBUG
+#CFLAGS += -Os -DNDEBUG
+CFLAGS += -Og -DNDEBUG
 CFLAGS += -fdata-sections -ffunction-sections
 CFLAGS += -ggdb  # Add debug information anyway
 endif
@@ -46,7 +48,7 @@ SRC_C = \
 	lib/utils/stdout_helpers.c \
 	lib/utils/pyexec.c \
 	lib/mp-readline/readline.c \
-#	$(BUILD)/_frozen_mpy.c \
+	$(BUILD)/_frozen_mpy.c \
 
 SRC_C += lib/libc/string0.c
 
@@ -81,8 +83,7 @@ LIBM_SRC_C = $(addprefix lib/libm/,\
 	wf_tgamma.c \
 	thumb_vfp_sqrtf.c \
 	)
-LIBM_SRC_C += lib/libm/thumb_vfp_sqrtf.c
-LIBS += "$(shell $(CC) $(CFLAGS) -print-libgcc-file-name)"
+#LIBS += "$(shell $(CC) $(CFLAGS) -print-libgcc-file-name)"
 LIBM_O = $(addprefix $(BUILD)/, $(LIBM_SRC_C:.c=.o))
 
 
@@ -99,23 +100,23 @@ SRC_C += $(addprefix $(GECKOSDK)/platform/emlib/src/,\
 	)
 
 # EFR32 chip specific parts
-CFLAGS  += -DEFR32MG1P232F256GM48
+CFLAGS  += -DEFR32MG1P132F256GM48
 INC     += -I$(TOP)/$(GECKOSDK)/platform/Device/SiliconLabs/EFR32MG1P/Include
 SRC_C   +=          $(GECKOSDK)/platform/Device/SiliconLabs/EFR32MG1P/Source/GCC/startup_efr32mg1p.c
 SRC_C   +=          $(GECKOSDK)/platform/Device/SiliconLabs/EFR32MG1P/Source/system_efr32mg1p.c
 LDFLAGS += -T$(TOP)/$(GECKOSDK)/platform/Device/SiliconLabs/EFR32MG1P/Source/GCC/efr32mg1p.ld
 
+CFLAGS += -D__STARTUP_CLEAR_BSS=1
 
-#
 CFLAGS += $(INC)
 OBJ = $(PY_CORE_O) $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
-OBJ += $(LIBM_O)
+#OBJ += $(LIBM_O)
 
 all: $(BUILD)/firmware.bin
 
-#$(BUILD)/_frozen_mpy.c: frozentest.mpy $(BUILD)/genhdr/qstrdefs.generated.h
-#	$(ECHO) "MISC freezing bytecode"
-#	$(Q)$(TOP)/tools/mpy-tool.py -f -q $(BUILD)/genhdr/qstrdefs.preprocessed.h -mlongint-impl=none $< > $@
+$(BUILD)/_frozen_mpy.c: frozentest.mpy $(BUILD)/genhdr/qstrdefs.generated.h
+	$(ECHO) "MISC freezing bytecode"
+	$(Q)$(TOP)/tools/mpy-tool.py -f -q $(BUILD)/genhdr/qstrdefs.preprocessed.h -mlongint-impl=none $< > $@
 
 $(BUILD)/firmware.elf: $(OBJ)
 	$(ECHO) "LINK $@"
